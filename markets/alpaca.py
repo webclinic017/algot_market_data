@@ -1,57 +1,25 @@
-import os
-import logging
-import json
-import requests
 import pandas as pd
+from tqdm import tqdm
+
+from alpaca_trade_api.rest import REST, TimeFrame
 
 
-class AlpacaHistoricalData:
+class AlpacaData:
     def __init__(self):
-        self.headers = {
-            "APCA-API-KEY-ID": os.environ["APCA_API_KEY_ID"],
-            "APCA-API-SECRET-KEY": os.environ["APCA_API_SECRET_KEY"],
-        }
-        self.APCA_API_DATA_URL = os.environ["APCA_API_DATA_URL"]
+        self.api = REST()
+        self.timeframes = {tf.value: tf for tf in TimeFrame}
 
-    def get_symbol_data(self, symbol, start, end, timeframe="1Min"):
-        symbol_bars_url = f"{self.APCA_API_DATA_URL}/v2/stocks/{symbol}/bars"
-        page_token = None
-        symbol_bars = []
+    def get_data(self, symbol, timeframe, start, end):
+        if timeframe not in self.timeframes.keys():
+            raise ValueError(f"Incorrect timeframe: {timeframe}. Available options: {', '.join(self.timeframes.keys())}")
 
-        while (page_token is not None) ^ (len(symbol_bars) == 0):
-            fetched_data = self.fetch_data(
-                symbol_bars_url, start, end, limit=10000, timeframe=timeframe, page_token=page_token
-            )
-            bars = fetched_data.get("bars")
-            if bars:
-                symbol_bars.extend(bars)
-                page_token = fetched_data.get("next_page_token")
-            else:
-                break
+        date_range = [dt.date() for dt in pd.date_range(start, end, freq="D")]
+        daily_data = (
+            self.api.get_bars(symbol, self.timeframes[timeframe], date, date, limit=10000, adjustment='raw').df
+            for date in tqdm(date_range, desc=f"Fetching daily data for: {symbol}, {timeframe}, {start} - {end}")
+        )
 
-        symbol_bars = pd.DataFrame(data=symbol_bars)
-        symbol_bars.rename(columns=["timestamp", "open", "high", "low", "close", "volume"])
-
-        return symbol_bars
-
-    def fetch_data(self, bars_url, start, end, limit, timeframe, page_token):
-        assert timeframe in ("1Min", "1Hour", "1Day"), "Available values are: 1Min, 1Hour, 1Day."
-        assert start <= end
-        assert 0 < limit <= 10000
-
-        data = {
-            "start": start,
-            "end": end,
-            "limit": limit,
-            "page_token": page_token,
-            "timeframe": timeframe,
-            "adjustment": 'adjusted'
-        }
-        data = {k: v for k, v in data.items() if v is not None}
-        response = requests.get(bars_url, headers=self.headers, params=data)
-        if not response.ok:
-            logging.warning(f"{response} {response.reason} {response.content}")
-        return json.loads(response.content)
+        return pd.concat(daily_data)
 
 
 if __name__ == "__main__":
@@ -59,6 +27,7 @@ if __name__ == "__main__":
 
     load_dotenv()
 
-    alpaca_data = AlpacaHistoricalData()
-    bars = alpaca_data.get_symbol_data("AAPL", "2021-02-08", "2021-02-08", "1Hour")
+    alpaca_data = AlpacaData()
+    bars = alpaca_data.get_data("AAPL", "1Hour", "2021-07-01", "2021-07-19")
     print(bars)
+
