@@ -11,12 +11,18 @@ class AlpacaData:
 
     def get_data(self, symbol, timeframe, start, end):
         if timeframe not in self.timeframes.keys():
-            raise ValueError(f"Incorrect timeframe: {timeframe}. Available options: {', '.join(self.timeframes.keys())}")
+            raise ValueError(
+                f"Incorrect timeframe: {timeframe}. Available options: {', '.join(self.timeframes.keys())}"
+            )
 
         date_range = [dt.date() for dt in pd.date_range(start, end, freq="D")]
         daily_data = (
-            self.api.get_bars(symbol, self.timeframes[timeframe], date, date, limit=10000, adjustment='raw').df
-            for date in tqdm(date_range, desc=f"Fetching daily data for: {symbol}, {timeframe}, {start} - {end}")
+            self.api.get_bars(
+                symbol, self.timeframes[timeframe], date, date, limit=10000, adjustment="raw"
+            ).df
+            for date in tqdm(
+                date_range, desc=f"Fetching daily data for: {symbol}, {timeframe}, {start} - {end}"
+            )
         )
 
         return pd.concat(daily_data)
@@ -30,4 +36,3 @@ if __name__ == "__main__":
     alpaca_data = AlpacaData()
     bars = alpaca_data.get_data("AAPL", "1Hour", "2021-07-01", "2021-07-19")
     print(bars)
-
