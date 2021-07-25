@@ -4,7 +4,7 @@ from tqdm import tqdm
 from alpaca_trade_api.rest import REST, TimeFrame
 
 
-class AlpacaData:
+class AlpacaHistoricalData:
     def __init__(self):
         self.api = REST()
         self.timeframes = {tf.value: tf for tf in TimeFrame}
@@ -21,7 +21,7 @@ class AlpacaData:
                 symbol, self.timeframes[timeframe], date, date, limit=10000, adjustment="raw"
             ).df
             for date in tqdm(
-                date_range, desc=f"Fetching daily data for: {symbol}, {timeframe}, {start} - {end}"
+                date_range, desc=f"Fetching data for: {symbol}, {timeframe}, {start} - {end}"
             )
         )
 
