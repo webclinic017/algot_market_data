@@ -1,5 +1,4 @@
 import os
-from itertools import chain
 
 import pandas as pd
 from tqdm import tqdm
@@ -50,10 +49,16 @@ class BinanceHistoricalData:
             )
 
         daily_data = (
-            bar for bar in
-            tqdm(
-                self.client.get_historical_klines_generator(symbol, timeframe, start, end, ),
-                desc=f"Fetching daily data for: {symbol}, {timeframe}, {start} - {end}", total=len(pd.date_range(start, end, freq=self.TIME_INTERVALS[timeframe]))
+            bar
+            for bar in tqdm(
+                self.client.get_historical_klines_generator(
+                    symbol,
+                    timeframe,
+                    start,
+                    end,
+                ),
+                desc=f"Fetching daily data for: {symbol}, {timeframe}, {start} - {end}",
+                total=len(pd.date_range(start, end, freq=self.TIME_INTERVALS[timeframe])),
             )
         )
         daily_data = pd.DataFrame(daily_data, columns=self.API_DATA_COLNAMES)

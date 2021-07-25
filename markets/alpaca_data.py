@@ -20,9 +20,7 @@ class AlpacaHistoricalData:
             self.api.get_bars(
                 symbol, self.timeframes[timeframe], date, date, limit=10000, adjustment="raw"
             ).df
-            for date in tqdm(
-                date_range, desc=f"Fetching data for: {symbol}, {timeframe}, {start} - {end}"
-            )
+            for date in tqdm(date_range, desc=f"Fetching data for: {symbol}, {timeframe}, {start} - {end}")
         )
 
         return pd.concat(daily_data)
@@ -33,6 +31,6 @@ if __name__ == "__main__":
 
     load_dotenv()
 
-    alpaca_data = AlpacaData()
+    alpaca_data = AlpacaHistoricalData()
     bars = alpaca_data.get_data("AAPL", "1Hour", "2021-07-01", "2021-07-19")
     print(bars)
